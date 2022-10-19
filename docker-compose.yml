@@ -1,0 +1,63 @@
+version: '3.7'
+services:
+  web:
+    container_name: nginx_wordpress
+    image: nginx:latest
+    ports: 
+      - 80:80
+    volumes:
+      - ./wordpress:/var/www/html/wordpress
+      - ./nginx:/etc/nginx/conf.d/
+    networks:
+      - wordpress
+
+  app:
+    build: ./php
+    container_name: php_wordpress
+    image: php:7.4-fpm
+    ports: 
+      - 9000
+    volumes:
+      - ./wordpress:/var/www/html/wordpress
+      - ./nginx/html:/usr/share/nginx/html
+    networks:
+      - wordpress
+
+  db:
+    container_name: mysql_wordpress
+    image: mysql:5.7.22
+    ports: 
+      - 3306:3306
+    expose:
+      - 3306
+      - 33060
+    volumes:
+      - ./mysql:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+      - MYSQL_DATABASE=${DB_DATABASE}
+      - MYSQL_USER=${DB_USERNAME}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - SERVICE_NAME=mysql
+    networks:
+      - wordpress
+
+  phpmyadmin:
+    container_name: phpmyadmin_wordpress
+    image: phpmyadmin:latest
+    ports: 
+      - 9090:80
+    volumes:
+      - ./phpmyadmin:/sessions
+      - ./phpmyadmin:/etc/phpmyadmin/config.user.inc.php
+      - ./phpmyadmin:/www/themes/theme/
+    environment:
+      - PMA_HOST=wordpress
+      - PMA_HOST=mysql_wordpress
+      - PMA_ARBITARY=1
+    networks:
+      - wordpress
+networks:
+  wordpress: 
+    name: wordpress
+    driver: bridge
